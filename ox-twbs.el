@@ -40,6 +40,8 @@
 
 ;;; Dependencies
 
+(require 'ox)
+(require 'ox-html)
 (require 'ox-publish)
 (require 'format-spec)
 (eval-when-compile (require 'cl) (require 'table nil 'noerror))
@@ -71,7 +73,7 @@
     (footnote-reference . org-twbs-footnote-reference)
     (headline . org-twbs-headline)
     (horizontal-rule . org-twbs-horizontal-rule)
-    (inline-src-block . org-twbs-inline-src-block)
+    (inline-src-block . pygments-org-html-code)
     (inlinetask . org-twbs-inlinetask)
     (inner-template . org-twbs-inner-template)
     (italic . org-twbs-italic)
@@ -91,7 +93,7 @@
     (radio-target . org-twbs-radio-target)
     (section . org-twbs-section)
     (special-block . org-twbs-special-block)
-    (src-block . org-twbs-src-block)
+    (src-block . pygments-org-html-code)
     (statistics-cookie . org-twbs-statistics-cookie)
     (strike-through . org-twbs-strike-through)
     (subscript . org-twbs-subscript)
@@ -2830,6 +2832,25 @@ holding contextual information."
       (format "<div%s>\n%s\n</div>" attributes contents))))
 
 ;;;; Src Block
+
+(defvar pygments-path "pygmentize")
+
+(defun pygments-org-html-code (code contents info)
+  ;; Generating tmp file path.
+  ;; Current date and time hash will ideally pass our needs.
+  (setq temp-source-file (format "/tmp/pygmentize-%s.txt"(md5 (current-time-string))))
+  ;; Writing block contents to the file.
+  (with-temp-file temp-source-file (insert (org-element-property :value code)))
+  ;; Exectuing the shell-command an reading an output
+  (shell-command-to-string (format "%s -l \"%s\" -f html %s"
+				   pygments-path
+				   (or (org-element-property :language code)
+				       "")
+				   temp-source-file)))
+
+(org-export-define-derived-backend 'org-sibi-html 'twbs
+  :translate-alist '((src-block .  pygments-org-html-code)
+		     (example-block . pygments-org-html-code)))
 
 (defun org-twbs-src-block (src-block contents info)
   "Transcode a SRC-BLOCK element from Org to HTML.
