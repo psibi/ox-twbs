@@ -2842,10 +2842,12 @@ holding contextual information."
   ;; Writing block contents to the file.
   (with-temp-file temp-source-file (insert (org-element-property :value code)))
   ;; Exectuing the shell-command an reading an output
-  (shell-command-to-string (format "%s -l \"%s\" -f html %s"
+  (shell-command-to-string (format "%s -l \"%s\" -f html -O cssclass=%s %s"
 				   pygments-path
 				   (or (org-element-property :language code)
 				       "")
+				   (or (org-element-property :language code)
+				       "highlight")
 				   temp-source-file)))
 
 (org-export-define-derived-backend 'org-sibi-html 'twbs
@@ -2856,22 +2858,33 @@ holding contextual information."
   "Transcode a SRC-BLOCK element from Org to HTML.
 CONTENTS holds the contents of the item.  INFO is a plist holding
 contextual information."
+  ;; Generating tmp file path.
+  ;; Current date and time hash will ideally pass our needs.
+  (setq temp-source-file (format "/tmp/pygmentize-%s.txt"(md5 (current-time-string))))
+  ;; Writing block contents to the file.
+  (with-temp-file temp-source-file (insert (org-element-property :value src-block)))
   (if (org-export-read-attribute :attr_html src-block :textarea)
       (org-twbs--textarea-block src-block)
     (let ((lang (org-element-property :language src-block))
           (caption (org-export-get-caption src-block))
           (code (org-twbs-format-code src-block info))
+            ;; Exectuing the shell-command an reading an output
+          (pygment-code (shell-command-to-string (format "%s -l \"%s\" -f html %s"
+				                         pygments-path
+				                         (or (org-element-property :language src-block)
+				                             "")
+				                         temp-source-file)))
           (label (let ((lbl (org-element-property :name src-block)))
                    (if (not lbl) ""
                      (format " id=\"%s\""
                              lbl)))))
-      (if (not lang) (format "<pre class=\"example\"%s>\n%s</pre>" label code)
+      (if (not lang) (format "<pre class=\"example\"%s>\n%s</pre>" label pygment-code)
         (format
          "<div class=\"org-src-container\">\n%s%s\n</div>"
          (if (not caption) ""
            (format "<label class=\"org-src-name\">%s</label>"
                    (org-export-data caption info)))
-         (format "\n<pre class=\"src src-%s\"%s>%s</pre>" lang label code))))))
+         (format "\n<pre class=\"src src-%s\"%s>%s</pre>" lang label pygment-code))))))
 
 ;;;; Statistics Cookie
 
