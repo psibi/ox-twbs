@@ -65,7 +65,7 @@
     (drawer . org-twbs-drawer)
     (dynamic-block . org-twbs-dynamic-block)
     (entity . org-twbs-entity)
-    (example-block . org-twbs-example-block)
+    (example-block . pygments-org-html-code)
     (export-block . org-twbs-export-block)
     (export-snippet . org-twbs-export-snippet)
     (fixed-width . org-twbs-fixed-width)
